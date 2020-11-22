@@ -1,0 +1,11 @@
+# Binaries
+Debug/
+../Debug/
+
+
+
+# Visual Studio files and folder
+.vs/
+
+*.pyc
+*.cso
