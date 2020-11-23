@@ -6,7 +6,14 @@ According to  *Ray Tracing in a Weekend* , but I use  window output instead of p
 
 1.the setup for windows 
 
-2.add or construct math lib
+2.add  easy math lib---glm
 
-### To be Continued...
+3.add std_image for loading or storing image
 
+### Step By Step
+
+1. Constructing a ray
+2. Adding a sphere
+3. Suface normals
+
+To be continued...
