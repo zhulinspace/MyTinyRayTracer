@@ -1,6 +1,9 @@
 #pragma once
 #include<Windows.h>
 #include<iostream>
+#include<random>
+#include"vendor\glm\glm.hpp"
+
 namespace SoftRender
 {
 	int g_width = 0;
@@ -12,12 +15,12 @@ namespace SoftRender
 	unsigned int* g_FrameBuffer = nullptr;
 	std::shared_ptr<float[]>g_DepthBuffer = nullptr;
 
-	unsigned int bgColor = ((123 << 16) | (195 << 8) | 221);
+	unsigned int bgColor = ((255 << 16) | (255 << 8) | 255);
 
 	void InitRenderer(int w, int h, HWND hWnd);
 
-	void UpDate(HWND hWnd);
-
+	void UpDate(HWND hWnd,const float t);
+	void DoOneFrame(const float t);
 	void ClearBuffer();
 	void ShutDown();
 
@@ -41,9 +44,9 @@ void SoftRender::InitRenderer(int w, int h, HWND hWnd)
 	ClearBuffer();
 }
 
-void SoftRender::UpDate(HWND hWnd)
+void SoftRender::UpDate(HWND hWnd,const float t)
 {
-	ClearBuffer();
+	DoOneFrame(t);
 
 	HDC hDC = GetDC(hWnd);
 	BitBlt(hDC, 0, 0, g_width, g_height, g_tempDC, 0, 0, SRCCOPY);
@@ -57,8 +60,28 @@ void SoftRender::ClearBuffer()
 		for (int col = 0; col < g_width; col++)
 		{
 			int idx = row * g_width + col;
-			g_FrameBuffer[idx] = bgColor;
+			g_FrameBuffer[idx] =bgColor;
 			g_DepthBuffer[idx] = 1.0f;
+		}
+	}
+}
+
+void SoftRender::DoOneFrame(const float t)
+{
+	
+	//for (int row = g_height - 1; row >= 0; row--)//为什么改变没有影响
+	for(int row=0;row<g_height;row++)
+	{
+		for (int col = 0; col < g_width; col++)
+		{
+		
+			glm::vec3 color(float(col) / float(g_width), float(row) / float(g_height), 0.2 * t);
+			int ir = int(255.99 * color[0]);
+			int ig = int(255.99 * color[1]);
+			int ib = int(255.99 * color[2]);
+			unsigned int newcolor = ((ir << 16) | (ig << 8) | ib);
+			int idx = row * g_width + col;
+			g_FrameBuffer[idx] = newcolor;
 		}
 	}
 }
