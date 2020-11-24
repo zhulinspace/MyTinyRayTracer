@@ -16,4 +16,13 @@ According to  *Ray Tracing in a Weekend* , but I use  window output instead of p
 2. Adding a sphere
 3. Suface normals
 
-To be continued...
+   4.add hitable list 
+
+bug!!! fix it!!
+
+### Next
+
+1.Antialiasing 
+
+2.Diffuse Matrial
+
