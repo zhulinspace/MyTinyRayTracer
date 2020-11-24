@@ -144,9 +144,14 @@
     <ClCompile Include="vendor\stb_image\stb_image.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Hitable.h" />
+    <ClInclude Include="HitableList.h" />
     <ClInclude Include="platform\Window.h" />
+    <ClInclude Include="Ray.h" />
     <ClInclude Include="Render.h" />
+    <ClInclude Include="Sphere.h" />
     <ClInclude Include="utils\timer.h" />
+    <ClInclude Include="utils\vec3.h" />
     <ClInclude Include="vendor\glm\common.hpp" />
     <ClInclude Include="vendor\glm\detail\compute_common.hpp" />
     <ClInclude Include="vendor\glm\detail\compute_vector_relational.hpp" />

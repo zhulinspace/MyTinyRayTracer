@@ -887,6 +887,21 @@
     <ClInclude Include="vendor\stb_image\stb_image.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Ray.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="utils\vec3.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Hitable.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Sphere.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="HitableList.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="vendor\glm\detail\func_common.inl">

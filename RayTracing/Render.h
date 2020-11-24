@@ -3,7 +3,12 @@
 #include<iostream>
 #include<random>
 #include"vendor\glm\glm.hpp"
-
+#include"Ray.h"
+#include"HitableList.h"
+#include"Hitable.h"
+#include"Sphere.h"
+#include<limits>
+float MAXFLOAT = std::numeric_limits<float>::max();
 namespace SoftRender
 {
 	int g_width = 0;
@@ -65,20 +70,63 @@ void SoftRender::ClearBuffer()
 		}
 	}
 }
+//float hit_sphere(const glm::vec3& center, float radius, const Ray& r)
+//{
+//	glm::vec3 oc = r.origin() - center;
+//	float a = glm::dot(r.direction(), r.direction());
+//	float b = 2.0 * glm::dot(oc, r.direction());
+//	float c = glm::dot(oc, oc) - radius * radius;
+//	float discriminant = b * b - 4 * a * c;
+//	if (discriminant < 0)
+//		return -1.0;
+//	else
+//		return (-b-sqrt(discriminant)) / (2.0 * a);
+//}
+glm::vec3 color(const Ray& r,Hitable *world)
+{
+	hit_record rec;
+	
+	if (world->hit(r,0.0,MAXFLOAT,rec))
+	{
+		
+		return glm::vec3((rec.normal.x+ 1), (rec.normal.y + 1),(rec.normal.z + 1) )*0.5f;
+
+	}
+	else
+	{
+		glm::vec3 unit_direction = glm::normalize(r.direction());
+		float t = 0.5 * (unit_direction.y + 1.0);
+		return  glm::vec3(1.0, 1.0, 1.0) * (1 - t) + t * glm::vec3(0.5, 0.7, 1.0);
+	}
+
+
+}
 
 void SoftRender::DoOneFrame(const float t)
 {
-	
+	glm::vec3 lower_left_corner(-2.0, -1.5, -1.0);
+	glm::vec3 horizontal(4.0, 0.0, 0.0);
+	glm::vec3 vertical(0.0, 3.0, 0.0);
+	glm::vec3 origin(0.0, 0.0, 0.0);
+	Hitable* list[2];
+	list[0] = new Sphere(glm::vec3(0, 0, -1), 0.5);
+	list[0] = new Sphere(glm::vec3(0, -100, -1),100);
+	Hitable* world = new HitableList(list, 2);
+
 	//for (int row = g_height - 1; row >= 0; row--)//为什么改变没有影响
 	for(int row=0;row<g_height;row++)
 	{
 		for (int col = 0; col < g_width; col++)
 		{
 		
-			glm::vec3 color(float(col) / float(g_width), float(row) / float(g_height), 0.2 * t);
-			int ir = int(255.99 * color[0]);
-			int ig = int(255.99 * color[1]);
-			int ib = int(255.99 * color[2]);
+			//glm::vec3 color(float(col) / float(g_width), float(row) / float(g_height), 0.2 * t);
+			float u = float(col) / float(g_width);
+			float v = float(row) / float(g_height);
+			Ray r(origin, lower_left_corner + u * horizontal + v * vertical);
+			glm::vec3 cr = color(r,world);
+			int ir = int(255.99 * cr[0]);
+			int ig = int(255.99 * cr[1]);
+			int ib = int(255.99 * cr[2]);
 			unsigned int newcolor = ((ir << 16) | (ig << 8) | ib);
 			int idx = row * g_width + col;
 			g_FrameBuffer[idx] = newcolor;
