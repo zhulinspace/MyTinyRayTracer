@@ -15,14 +15,12 @@ According to  *Ray Tracing in a Weekend* , but I use  window output instead of p
 1. Constructing a ray
 2. Adding a sphere
 3. Suface normals
+4. add hitable list 
+5. Antialiasing 
 
-   4.add hitable list 
 
-bug!!! fix it!!
 
 ### Next
 
-1.Antialiasing 
-
-2.Diffuse Matrial
+- Diffuse Matrial
 

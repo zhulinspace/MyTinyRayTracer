@@ -7,8 +7,13 @@
 #include"HitableList.h"
 #include"Hitable.h"
 #include"Sphere.h"
+#include"Camera.h"
 #include<limits>
 float MAXFLOAT = std::numeric_limits<float>::max();
+#include<random>
+std::random_device rd;
+std::mt19937 mt(rd());
+std::uniform_real_distribution<float>dist(0.0,1.0);
 namespace SoftRender
 {
 	int g_width = 0;
@@ -104,26 +109,31 @@ glm::vec3 color(const Ray& r,Hitable *world)
 
 void SoftRender::DoOneFrame(const float t)
 {
+	int ns = 10;
 	glm::vec3 lower_left_corner(-2.0, -1.5, -1.0);
 	glm::vec3 horizontal(4.0, 0.0, 0.0);
 	glm::vec3 vertical(0.0, 3.0, 0.0);
 	glm::vec3 origin(0.0, 0.0, 0.0);
+
 	Hitable* list[2];
 	list[0] = new Sphere(glm::vec3(0, 0, -1), 0.5);
-	list[0] = new Sphere(glm::vec3(0, -100, -1),100);
+	list[1] = new Sphere(glm::vec3(0, -100.5, -1),100);
 	Hitable* world = new HitableList(list, 2);
-
-	//for (int row = g_height - 1; row >= 0; row--)//为什么改变没有影响
+	Camera cam;
+	//for(int row= g_height-1;row>=0;row--)
 	for(int row=0;row<g_height;row++)
 	{
 		for (int col = 0; col < g_width; col++)
 		{
-		
-			//glm::vec3 color(float(col) / float(g_width), float(row) / float(g_height), 0.2 * t);
-			float u = float(col) / float(g_width);
-			float v = float(row) / float(g_height);
-			Ray r(origin, lower_left_corner + u * horizontal + v * vertical);
-			glm::vec3 cr = color(r,world);
+			glm::vec3 cr(0.0, 0.0, 0.0);
+			for (int s = 0; s < ns; s++)
+			{
+				float u = float(col+dist(mt)) / float(g_width);
+				float v = float(row+ dist(mt)) / float(g_height);
+				Ray r = cam.GetRay(u, v);
+				cr += color(r, world);
+			}
+			cr /= float(ns);
 			int ir = int(255.99 * cr[0]);
 			int ig = int(255.99 * cr[1]);
 			int ib = int(255.99 * cr[2]);
