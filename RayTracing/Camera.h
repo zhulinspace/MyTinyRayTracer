@@ -13,7 +13,7 @@ public:
 	}
 	Ray GetRay(float u, float v)
 	{
-		return Ray(origin, lower_left_corner + u * horizontal + (1 - v) * vertical-origin);
+		return Ray(origin, lower_left_corner + u * horizontal + v * vertical-origin);
 	}
 
 	glm::vec3 lower_left_corner;

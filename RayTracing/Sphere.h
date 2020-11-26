@@ -1,18 +1,24 @@
 #pragma once
 #include"Hitable.h"
+#include"Material.h"
 class Sphere :public Hitable
 {
 public:
 	Sphere(){}
-	Sphere(glm::vec3 cen,float r)
-		:center(cen),radius(r)
+	Sphere(glm::vec3 cen, float r, material *mat)
+		:center(cen),radius(r),m(mat)
 	{}
+	~Sphere()
+	{
+		delete m;
+	}
 	virtual bool hit(const Ray& r, float t_min, float t_max, hit_record& rec)const;
 	glm::vec3 GetCenter()const { return center; }
 	float GetRadius()const { return radius; }
 private:
 	glm::vec3 center;
 	float radius;
+	material* m;
 };
 
 bool Sphere::hit(const Ray& r, float t_min, float t_max, hit_record& rec)const
@@ -31,6 +37,7 @@ bool Sphere::hit(const Ray& r, float t_min, float t_max, hit_record& rec)const
 			rec.p = r.point_at_parameter(temp);
 			//p is hit point!
 			rec.normal = (rec.p - center) / radius;
+			rec.mat_ptr = m;
 			return true;
 
 		}
@@ -40,6 +47,7 @@ bool Sphere::hit(const Ray& r, float t_min, float t_max, hit_record& rec)const
 			rec.t = temp;
 			rec.p = r.point_at_parameter(temp);
 			rec.normal = (rec.p - center) / radius;
+			rec.mat_ptr = m;
 			return true;
 
 		}

@@ -17,10 +17,10 @@ According to  *Ray Tracing in a Weekend* , but I use  window output instead of p
 3. Suface normals
 4. add hitable list 
 5. Antialiasing 
-
-
+6. Material
 
 ### Next
 
-- Diffuse Matrial
+- Dielectrics
+- positionable camera
 

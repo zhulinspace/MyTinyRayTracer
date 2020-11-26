@@ -8,12 +8,10 @@
 #include"Hitable.h"
 #include"Sphere.h"
 #include"Camera.h"
+#include"Material.h"
 #include<limits>
 float MAXFLOAT = std::numeric_limits<float>::max();
-#include<random>
-std::random_device rd;
-std::mt19937 mt(rd());
-std::uniform_real_distribution<float>dist(0.0,1.0);
+
 namespace SoftRender
 {
 	int g_width = 0;
@@ -46,8 +44,9 @@ void SoftRender::InitRenderer(int w, int h, HWND hWnd)
 	ReleaseDC(hWnd, hDC);
 
 	BITMAPINFO bi =
-	{ {sizeof(BITMAPINFOHEADER),w,-h,1,32,BI_RGB,
+	{ {sizeof(BITMAPINFOHEADER),w,h,1,32,BI_RGB,
 		(DWORD)w * h * 4,0,0,0,0}};
+	//32指定表示颜色要用到的位数
 	g_tempBm = CreateDIBSection(g_tempDC, &bi, DIB_RGB_COLORS, (void**)&g_FrameBuffer,0,0);
 	g_oldBm = (HBITMAP)SelectObject(g_tempDC, g_tempBm);
 	g_DepthBuffer.reset(new float[w * h]);
@@ -56,6 +55,7 @@ void SoftRender::InitRenderer(int w, int h, HWND hWnd)
 
 void SoftRender::UpDate(HWND hWnd,const float t)
 {
+	ClearBuffer();
 	DoOneFrame(t);
 
 	HDC hDC = GetDC(hWnd);
@@ -75,27 +75,25 @@ void SoftRender::ClearBuffer()
 		}
 	}
 }
-//float hit_sphere(const glm::vec3& center, float radius, const Ray& r)
-//{
-//	glm::vec3 oc = r.origin() - center;
-//	float a = glm::dot(r.direction(), r.direction());
-//	float b = 2.0 * glm::dot(oc, r.direction());
-//	float c = glm::dot(oc, oc) - radius * radius;
-//	float discriminant = b * b - 4 * a * c;
-//	if (discriminant < 0)
-//		return -1.0;
-//	else
-//		return (-b-sqrt(discriminant)) / (2.0 * a);
-//}
-glm::vec3 color(const Ray& r,Hitable *world)
+
+
+
+glm::vec3 color(const Ray& r,Hitable *world,int depth)
 {
 	hit_record rec;
 	
-	if (world->hit(r,0.0,MAXFLOAT,rec))
+	if (world->hit(r,0.001,MAXFLOAT,rec))
 	{
-		
-		return glm::vec3((rec.normal.x+ 1), (rec.normal.y + 1),(rec.normal.z + 1) )*0.5f;
-
+		Ray scattered;
+		glm::vec3 attenuation;
+		if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered))
+		{
+			return attenuation * color(scattered, world, depth + 1);
+		}
+		else
+		{
+			return glm::vec3(0, 0, 0);
+		}
 	}
 	else
 	{
@@ -103,22 +101,20 @@ glm::vec3 color(const Ray& r,Hitable *world)
 		float t = 0.5 * (unit_direction.y + 1.0);
 		return  glm::vec3(1.0, 1.0, 1.0) * (1 - t) + t * glm::vec3(0.5, 0.7, 1.0);
 	}
-
+	
 
 }
 
 void SoftRender::DoOneFrame(const float t)
 {
-	int ns = 10;
-	glm::vec3 lower_left_corner(-2.0, -1.5, -1.0);
-	glm::vec3 horizontal(4.0, 0.0, 0.0);
-	glm::vec3 vertical(0.0, 3.0, 0.0);
-	glm::vec3 origin(0.0, 0.0, 0.0);
+	int ns =10;
 
-	Hitable* list[2];
-	list[0] = new Sphere(glm::vec3(0, 0, -1), 0.5);
-	list[1] = new Sphere(glm::vec3(0, -100.5, -1),100);
-	Hitable* world = new HitableList(list, 2);
+	Hitable* list[4];
+	list[0] = new Sphere(glm::vec3(0, 0, -1), 0.5,new lambertian(glm::vec3(0.8,0.3,0.3)));
+	list[1] = new Sphere(glm::vec3(0, -100.5, -1),100,new lambertian(glm::vec3(0.8,0.8,0.0)));
+	list[2] = new Sphere(glm::vec3(1,0, -1), 0.5, new metal(glm::vec3(0.8, 0.6, 0.2),0.3));
+	list[3] = new Sphere(glm::vec3(-1, 0, -1), 0.5, new metal(glm::vec3(0.8, 0.8, 0.8),0.3));
+	Hitable* world = new HitableList(list,4);
 	Camera cam;
 	//for(int row= g_height-1;row>=0;row--)
 	for(int row=0;row<g_height;row++)
@@ -131,9 +127,10 @@ void SoftRender::DoOneFrame(const float t)
 				float u = float(col+dist(mt)) / float(g_width);
 				float v = float(row+ dist(mt)) / float(g_height);
 				Ray r = cam.GetRay(u, v);
-				cr += color(r, world);
+				cr += color(r, world,0);
 			}
 			cr /= float(ns);
+			cr = glm::vec3(sqrtf(cr[0]), sqrtf(cr[1]), sqrtf(cr[2]));
 			int ir = int(255.99 * cr[0]);
 			int ig = int(255.99 * cr[1]);
 			int ib = int(255.99 * cr[2]);
