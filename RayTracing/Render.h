@@ -107,15 +107,23 @@ glm::vec3 color(const Ray& r,Hitable *world,int depth)
 
 void SoftRender::DoOneFrame(const float t)
 {
-	int ns =10;
+	int ns =2;
 
-	Hitable* list[4];
-	list[0] = new Sphere(glm::vec3(0, 0, -1), 0.5,new lambertian(glm::vec3(0.8,0.3,0.3)));
+	Hitable* list[5];
+	list[0] = new Sphere(glm::vec3(0, 0, -1), 0.5,new lambertian(glm::vec3(0.1,0.2,0.5)));
 	list[1] = new Sphere(glm::vec3(0, -100.5, -1),100,new lambertian(glm::vec3(0.8,0.8,0.0)));
 	list[2] = new Sphere(glm::vec3(1,0, -1), 0.5, new metal(glm::vec3(0.8, 0.6, 0.2),0.3));
-	list[3] = new Sphere(glm::vec3(-1, 0, -1), 0.5, new metal(glm::vec3(0.8, 0.8, 0.8),0.3));
-	Hitable* world = new HitableList(list,4);
-	Camera cam;
+	list[3] = new Sphere(glm::vec3(-1, 0, -1), 0.5, new dielectric(1.5));
+	list[4] = new Sphere(glm::vec3(-1, 0, -1), -0.45, new dielectric(1.5));
+
+	Hitable* world = new HitableList(list,5);
+	glm::vec3 lookfrom, lookat, vup;
+	float aspect = float(g_width / g_height);
+	float vfov = 90;
+	lookfrom = glm::vec3(0, 0, 0);
+	lookat = glm::vec3(0, 0, -1);
+	vup = glm::vec3(0, 1, 0);
+	Camera cam(lookfrom, lookat, vup, vfov, aspect);
 	//for(int row= g_height-1;row>=0;row--)
 	for(int row=0;row<g_height;row++)
 	{

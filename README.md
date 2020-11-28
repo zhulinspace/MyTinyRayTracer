@@ -19,8 +19,9 @@ According to  *Ray Tracing in a Weekend* , but I use  window output instead of p
 5. Antialiasing 
 6. Material
 
-### Next
+7. Dielectrics （bug)
+8. positionable camera
 
-- Dielectrics
-- positionable camera
+Next:
 
+fix bug !!!!
