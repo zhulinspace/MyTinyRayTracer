@@ -14,7 +14,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPreviousInst,
 
 	//创建一个窗口
 	MyTimer timer;
-	Window wnd(800, 600, "Ray Tracer");
+	Window wnd(800,600, "Ray Tracer");
 	SoftRender::InitRenderer(wnd.width, wnd.height, wnd.hWnd);
 	while (1)
 	{

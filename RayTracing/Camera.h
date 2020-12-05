@@ -15,16 +15,14 @@ public:
 		u = glm::normalize(glm::cross(vup, w));
 		v = glm::cross(w, u);
 		lower_left_corner = origin - half_width * u - half_height * v - w;
-		horizontal = half_width * u;
-		vertical = half_height * v;
-		/*lower_left_corner=glm::vec3 (-half_width, -half_height, -1.0);
-		horizontal=glm::vec3 (2*half_width, 0.0, 0.0);
-		vertical=glm::vec3 (0.0, 2*half_height, 0.0);*/
+		horizontal = 2*half_width * u;
+		vertical = 2*half_height * v;
+	
 		
 	}
 	Ray GetRay(float u, float v)
 	{
-		return Ray(origin, lower_left_corner + u * horizontal + v * vertical-origin);
+		return Ray(origin, lower_left_corner+ u*horizontal+v*vertical-origin);
 	}
 
 	glm::vec3 lower_left_corner;

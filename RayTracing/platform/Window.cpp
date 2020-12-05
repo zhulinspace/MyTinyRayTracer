@@ -119,14 +119,12 @@ LRESULT Window::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noe
 {
 	switch (msg)
 	{
-		case WM_DESTROY:
+		case WM_CLOSE:
 		{
 			PostQuitMessage(0);
-			break;//bug 1
+			return 0;
 		}
-		default:
-			return DefWindowProc(hWnd, msg, wParam, lParam);
-			break;
+	
 	}
-	return 0;
+	return DefWindowProc(hWnd, msg, wParam, lParam);
 }

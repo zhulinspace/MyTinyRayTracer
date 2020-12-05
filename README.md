@@ -24,4 +24,10 @@ According to  *Ray Tracing in a Weekend* , but I use  window output instead of p
 
 Next:
 
-fix bug !!!!
+Now I doubt there is bug or not ,but my programs still work not good,
+
+But most importanly , it is too SLOW(may be one evening for the complex scene)
+
+So this recurisve Ray Tracing ,or Whitted_style Ray Tracing is not in my next plan,
+
+I need find the faster way to do it!

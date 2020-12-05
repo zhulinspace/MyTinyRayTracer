@@ -104,26 +104,71 @@ glm::vec3 color(const Ray& r,Hitable *world,int depth)
 	
 
 }
+Hitable* random_scene()
+{
+	int n =500;
+	Hitable** list = new Hitable * [n + 1];
+	list[0] = new Sphere(glm::vec3(0, -1000, 0), 1000, new lambertian(glm::vec3(0.5, 0.5, 0.5)));
+	int i = 1;
+	//for (int a = -11; a < 11; a++)
+	//{
+	//	for (int b = -11; b < 11; b++)
+	//	{
+	//		if (i == n - 1)break;
+	//		float choose_mat = dist(mt);
+	//		glm::vec3 center(a + 0.9 * dist(mt), 0.2, b + 0.9 * dist(mt));
+	//		if ((center - glm::vec3(4, 0.2, 0)).length() > 0.9)
+	//		{
+	//			if (choose_mat < 0.8)//diffuse
+	//			{
+	//				list[i++] = new Sphere(center, 0.2,
+	//					new lambertian(glm::vec3(dist(mt)* dist(mt), dist(mt) * dist(mt), dist(mt) * dist(mt))));
+	//			}
+	//			else if (choose_mat < 0.95)//metal
+	//			{
+	//				list[i++] = new Sphere(center, 0.2, 
+	//					new metal(glm::vec3(0.5*(1+dist(mt)), 0.5 * (1 + dist(mt)), 0.5 * (1 + dist(mt))), 0.5*dist(mt)));
+	//			}
+	//			else//glass
+	//			{
+	//				list[i++]= new Sphere(center, 0.2, 
+	//					new dielectric(1.5));
+	//			}
+	//		}
+	//	}
+	//}
+
+	list[i++] = new Sphere(glm::vec3(0, 1, 0), 1.0, new dielectric(1.5));
+	list[i++] = new Sphere(glm::vec3(-4, 1, 0), 1.0, new lambertian(glm::vec3(0.4, 0.2, 0.1)));
+	list[i++] = new Sphere(glm::vec3(4, 1, 0), 1.0, new metal(glm::vec3(0.7, 0.6, 0.5),0.0));
+	return new HitableList(list, i);
+}
 
 void SoftRender::DoOneFrame(const float t)
 {
-	int ns =2;
+	int ns =20;
 
 	Hitable* list[5];
-	list[0] = new Sphere(glm::vec3(0, 0, -1), 0.5,new lambertian(glm::vec3(0.1,0.2,0.5)));
-	list[1] = new Sphere(glm::vec3(0, -100.5, -1),100,new lambertian(glm::vec3(0.8,0.8,0.0)));
-	list[2] = new Sphere(glm::vec3(1,0, -1), 0.5, new metal(glm::vec3(0.8, 0.6, 0.2),0.3));
+	list[0] = new Sphere(glm::vec3(0, -100.5, -1), 100, new lambertian(glm::vec3(0.5, 0.5, 0.5)));
+	list[1] = new Sphere(glm::vec3(0, 0, -1), 0.5, new lambertian(glm::vec3(0.4, 0.2, 0.1)));
+	list[2] = new Sphere(glm::vec3(1,0, -1), 0.5, new metal(glm::vec3(0.7, 0.6, 0.5), 0.0));
 	list[3] = new Sphere(glm::vec3(-1, 0, -1), 0.5, new dielectric(1.5));
-	list[4] = new Sphere(glm::vec3(-1, 0, -1), -0.45, new dielectric(1.5));
+	//list[4] = new Sphere(glm::vec3(-1, 0, -1), -0.45, new dielectric(1.5));
+	Hitable* world = new HitableList(list,4);
 
-	Hitable* world = new HitableList(list,5);
+
+
+
+	//Hitable* world = random_scene();
+
 	glm::vec3 lookfrom, lookat, vup;
-	float aspect = float(g_width / g_height);
+	float aspect = float(g_width*1.0f / g_height);
 	float vfov = 90;
-	lookfrom = glm::vec3(0, 0, 0);
-	lookat = glm::vec3(0, 0, -1);
+	lookfrom = glm::vec3(0,0,-3);
+	lookat = glm::vec3(0,0,0);
 	vup = glm::vec3(0, 1, 0);
 	Camera cam(lookfrom, lookat, vup, vfov, aspect);
+
 	//for(int row= g_height-1;row>=0;row--)
 	for(int row=0;row<g_height;row++)
 	{
