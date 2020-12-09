@@ -144,6 +144,8 @@
     <ClCompile Include="vendor\stb_image\stb_image.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BoundingBox.h" />
+    <ClInclude Include="bvh.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Hitable.h" />
     <ClInclude Include="HitableList.h" />

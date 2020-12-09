@@ -1,6 +1,7 @@
 #pragma once
 #include<Windows.h>
 #include<iostream>
+#include<chrono>
 #include<random>
 #include"vendor\glm\glm.hpp"
 #include"Ray.h"
@@ -10,6 +11,8 @@
 #include"Camera.h"
 #include"Material.h"
 #include<limits>
+#include"bvh.h"
+#include<fstream>
 float MAXFLOAT = std::numeric_limits<float>::max();
 
 namespace SoftRender
@@ -86,7 +89,7 @@ glm::vec3 color(const Ray& r,Hitable *world,int depth)
 	{
 		Ray scattered;
 		glm::vec3 attenuation;
-		if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered))
+		if (depth <5 && rec.mat_ptr->scatter(r, rec, attenuation, scattered))
 		{
 			return attenuation * color(scattered, world, depth + 1);
 		}
@@ -106,7 +109,7 @@ glm::vec3 color(const Ray& r,Hitable *world,int depth)
 }
 Hitable* random_scene()
 {
-	int n =500;
+	int n =2;
 	Hitable** list = new Hitable * [n + 1];
 	list[0] = new Sphere(glm::vec3(0, -1000, 0), 1000, new lambertian(glm::vec3(0.5, 0.5, 0.5)));
 	int i = 1;
@@ -141,13 +144,17 @@ Hitable* random_scene()
 	list[i++] = new Sphere(glm::vec3(0, 1, 0), 1.0, new dielectric(1.5));
 	list[i++] = new Sphere(glm::vec3(-4, 1, 0), 1.0, new lambertian(glm::vec3(0.4, 0.2, 0.1)));
 	list[i++] = new Sphere(glm::vec3(4, 1, 0), 1.0, new metal(glm::vec3(0.7, 0.6, 0.5),0.0));
+
 	return new HitableList(list, i);
 }
 
 void SoftRender::DoOneFrame(const float t)
 {
-	int ns =20;
 
+	auto start = std::chrono::system_clock::now();
+
+
+	int ns =20;
 	Hitable* list[5];
 	list[0] = new Sphere(glm::vec3(0, -100.5, -1), 100, new lambertian(glm::vec3(0.5, 0.5, 0.5)));
 	list[1] = new Sphere(glm::vec3(0, 0, -1), 0.5, new lambertian(glm::vec3(0.4, 0.2, 0.1)));
@@ -155,17 +162,15 @@ void SoftRender::DoOneFrame(const float t)
 	list[3] = new Sphere(glm::vec3(-1, 0, -1), 0.5, new dielectric(1.5));
 	//list[4] = new Sphere(glm::vec3(-1, 0, -1), -0.45, new dielectric(1.5));
 	Hitable* world = new HitableList(list,4);
-
-
-
+	//Hitable* world = new bvh_node(list, 4,0.0,0.0);
 
 	//Hitable* world = random_scene();
 
 	glm::vec3 lookfrom, lookat, vup;
 	float aspect = float(g_width*1.0f / g_height);
 	float vfov = 90;
-	lookfrom = glm::vec3(0,0,-3);
-	lookat = glm::vec3(0,0,0);
+	lookfrom = glm::vec3(0,0,0);
+	lookat = glm::vec3(0,0,-1);
 	vup = glm::vec3(0, 1, 0);
 	Camera cam(lookfrom, lookat, vup, vfov, aspect);
 
@@ -192,6 +197,14 @@ void SoftRender::DoOneFrame(const float t)
 			g_FrameBuffer[idx] = newcolor;
 		}
 	}
+	auto end = std::chrono::system_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+	double time = double(duration.count()) * std::chrono::microseconds::period::num / std::chrono::microseconds::period::den;
+	
+	std::ofstream outputfile;
+	outputfile.open("rex.txt",std:: ios::app);
+	outputfile << time << "seconds" << "\n";
+	outputfile.close();
 }
 
 void SoftRender::ShutDown()

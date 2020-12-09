@@ -8,7 +8,7 @@ public:
 	{	
 		glm::vec3 u,v, w;
 		float theta = vfov * M_PI / 180;
-		float half_height = tan(theta / 2);
+		float half_height = tan(theta / 2);//这个half_height计算对了吗？
 		float half_width = aspect * half_height;
 		origin = lookfrom;
 		w = glm::normalize(lookfrom - lookat);
@@ -17,7 +17,9 @@ public:
 		lower_left_corner = origin - half_width * u - half_height * v - w;
 		horizontal = 2*half_width * u;
 		vertical = 2*half_height * v;
-	
+		
+		//这里的成像平面定义如果定义为z=-1
+		//
 		
 	}
 	Ray GetRay(float u, float v)

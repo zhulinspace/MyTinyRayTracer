@@ -13,6 +13,7 @@ public:
 		delete m;
 	}
 	virtual bool hit(const Ray& r, float t_min, float t_max, hit_record& rec)const;
+	virtual bool bounding_box(float t0, float t1, aabb& box)const;
 	glm::vec3 GetCenter()const { return center; }
 	float GetRadius()const { return radius; }
 private:
@@ -53,4 +54,10 @@ bool Sphere::hit(const Ray& r, float t_min, float t_max, hit_record& rec)const
 		}
 	}
 	return false;
+}
+
+inline bool Sphere::bounding_box(float t0, float t1, aabb& box) const
+{
+	box = aabb(center - glm::vec3(radius, radius, radius), center + glm::vec3(radius, radius, radius));
+	return true;
 }

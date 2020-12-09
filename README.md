@@ -14,20 +14,22 @@ According to  *Ray Tracing in a Weekend* , but I use  window output instead of p
 
 1. Constructing a ray
 2. Adding a sphere
-3. Suface normals
 4. add hitable list 
 5. Antialiasing 
-6. Material
-
-7. Dielectrics （bug)
 8. positionable camera
 
-Next:
+## Result
 
 Now I doubt there is bug or not ,but my programs still work not good,
 
 But most importanly , it is too SLOW(may be one evening for the complex scene)
 
-So this recurisve Ray Tracing ,or Whitted_style Ray Tracing is not in my next plan,
+The following is my result.
 
-I need find the faster way to do it!
+![](RayTracing\\result_img\\RayTracer1.png)
+
+## next
+
+1.use BVH to make it faster!!!
+
+I try a simple bvh and compare it to the origin one,the former spent 269 seconds for a scene like above,and for the origin one ,it spent 96 seconds. Ops ,it just a sad story,May be something went wrong!!

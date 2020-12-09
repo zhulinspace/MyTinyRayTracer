@@ -908,6 +908,12 @@
     <ClInclude Include="Material.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="BoundingBox.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="bvh.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="vendor\glm\detail\func_common.inl">
