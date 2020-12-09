@@ -26,7 +26,7 @@ But most importanly , it is too SLOW(may be one evening for the complex scene)
 
 The following is my result.
 
-![](https://github.com/zhulinspace/MyTinyRayTracer/RayTracing/result_img/RayTracer1.png)
+![](https://github.com/zhulinspace/MyTinyRayTracer/blob/main/RayTracing/result_img/RayTracer1.png)
 
 
 
