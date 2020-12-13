@@ -3,7 +3,7 @@
 #include<fstream>
 #include"platform\Window.h"
 #include"Render.h"
-#include"utils\timer.h"
+
 #include<complex>
 //windows program entry point
 int CALLBACK

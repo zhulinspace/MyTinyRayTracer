@@ -1,34 +1,36 @@
 #pragma once
-#include"Hitable.h"
-#include<random>
-//std::random_device rd;
-std::mt19937 rng(rd());
-std::uniform_real_distribution<double>nd(0, 1);
+#include"HitableList.h"
+
+
 class bvh_node :public Hitable
 {
 public:
 	bvh_node() {}
-	bvh_node(Hitable** l, int n, float time0, float time1);
 	
-	virtual bool hit(const Ray& r, float t_min, float t_max, hit_record& rec)const;
-	virtual bool bounding_box(float t0, float t1, aabb& b)const;
+	bvh_node(const HitableList& list)
+		:bvh_node(list.objects,0, list.objects.size())
+	{}
+	
+	bvh_node(const std::vector<shared_ptr<Hitable>>& src_objects, size_t start, size_t end);
+	virtual bool hit(const Ray& r, double t_min, double t_max, hit_record& rec)const;
+	virtual bool bounding_box(aabb& b)const;
 
-	Hitable* left;
-	Hitable* right;
+	shared_ptr<Hitable> left;
+	shared_ptr<Hitable> right;
 	aabb box;
 };
 
-bool bvh_node::bounding_box(float t0, float t1, aabb& b)const
+bool bvh_node::bounding_box(aabb& output_box)const
 {
-	b = box;
+	output_box = box;
 	return true;
 }
 
 
 
-bool bvh_node::hit(const Ray& r, float t_min, float t_max, hit_record& rec)const
+bool bvh_node::hit(const Ray& r, double t_min, double t_max, hit_record& rec)const
 {
-	if (box.hit(r, t_min, t_max))
+	/*if (box.hit(r, t_min, t_max))
 	{
 		hit_record left_rec, right_rec;
 		bool hit_left = left->hit(r, t_min, t_max, left_rec);
@@ -51,48 +53,45 @@ bool bvh_node::hit(const Ray& r, float t_min, float t_max, hit_record& rec)const
 			rec = right_rec;
 			return true;
 		}
+		else
+			return false;
 	}
 	else
+		return false;*/
+
+	if (!box.hit(r, t_min, t_max))
 		return false;
 
+	bool hit_left = left->hit(r, t_min, t_max, rec);
+	bool hit_right = right->hit(r, t_min, t_max, rec);
+
+	return hit_left || hit_right;
+
 }
-int box_x_compare(const void* a, const void* b)
-{
-	aabb box_left, box_right;
-	Hitable* ah = *(Hitable**)a;
-	Hitable* bh = *(Hitable**)b;
-	if(!ah->bounding_box(0,0,box_left)||!bh->bounding_box(0,0,box_right))
-		printf("no bouding box in bvh_node constructer\n");
-	if ( box_left.min().x - box_right.min().x< 0.0)
-		return -1;
-	else
-		return 1;
+inline bool box_compare(const shared_ptr<Hitable> a, const shared_ptr<Hitable> b, int axis) {
+	aabb box_a;
+	aabb box_b;
+
+	if (!a->bounding_box(box_a) || !b->bounding_box(box_b))
+		std::cerr << "No bounding box in bvh_node constructor.\n";
+
+	return box_a.Min().e[axis] < box_b.Min().e[axis];
 }
-int box_y_compare(const void* a, const void* b)
-{
-	aabb box_left, box_right;
-	Hitable* ah = *(Hitable**)a;
-	Hitable* bh = *(Hitable**)b;
-	if (!ah->bounding_box(0, 0, box_left) || !bh->bounding_box(0, 0, box_right))
-		printf("no bouding box in bvh_node constructer\n");
-	if (box_left.min().y - box_right.min().y < 0.0)
-		return -1;
-	else
-		return 1;
+
+
+bool box_x_compare(const shared_ptr<Hitable> a, const shared_ptr<Hitable> b) {
+	return box_compare(a, b, 0);
 }
-int box_z_compare(const void* a, const void* b)
-{
-	aabb box_left, box_right;
-	Hitable* ah = *(Hitable**)a;
-	Hitable* bh = *(Hitable**)b;
-	if (!ah->bounding_box(0, 0, box_left) || !bh->bounding_box(0, 0, box_right))
-		printf("no bouding box in bvh_node constructer\n");
-	if (box_left.min().z - box_right.min().z < 0.0)
-		return -1;
-	else
-		return 1;
+
+bool box_y_compare(const shared_ptr<Hitable> a, const shared_ptr<Hitable> b) {
+	return box_compare(a, b, 1);
 }
-bvh_node::bvh_node(Hitable** l, int n, float time0, float time1)
+
+bool box_z_compare(const shared_ptr<Hitable> a, const shared_ptr<Hitable> b) {
+	return box_compare(a, b, 2);
+}
+
+bvh_node::bvh_node(const std::vector<shared_ptr<Hitable>>& src_objects, size_t start, size_t end)
 {
 	//1.选择最长的那个轴,如何选择最长的那个轴
 
@@ -103,32 +102,43 @@ bvh_node::bvh_node(Hitable** l, int n, float time0, float time1)
 
 	//我得知道当前节点的bbox
 
+	auto objects = src_objects;//create a modifiable array of the src scene objects
 
-	int axis = int(3 * nd(rng));
-	//drand48产生什么样的随机数
-	if (axis == 0)
-		qsort(l, n, sizeof(Hitable*), box_x_compare);
-	else if(axis==1)
-		qsort(l, n, sizeof(Hitable*), box_y_compare);
-	else
-		qsort(l, n, sizeof(Hitable*), box_z_compare);
+	int axis = random_int(0,2);
+
+	auto comparator = (axis == 0) ? box_x_compare
+		: (axis == 1) ? box_y_compare
+		: box_z_compare;
+
+	size_t n = end - start;
 
 	if (n == 1)
-		left = right = l[0];
+		left = right = objects[start];
 	else if (n == 2)
 	{
-		left = l[0];
-		right = l[1];
+		if (comparator(objects[start], objects[start + 1]))
+		{
+			left = objects[start];
+			right = objects[start + 1];
+		}
+		else
+		{
+			left = objects[start+1];
+			right = objects[start ];
+		}
 	}
 	else
 	{
-		left = new bvh_node(l, n / 2, time0, time1);
-		right = new bvh_node(l+n/2, n-n / 2, time0, time1);
+		std::sort(objects.begin()+start, objects.begin()+end, comparator);
+
+		auto mid = start + n / 2;
+		left = make_shared<bvh_node>(objects, start, mid);
+		right = make_shared<bvh_node>(objects, mid, end);
+
 	}
 	aabb box_left, box_right;
-	if (!left->bounding_box(time0, time1, box_left) || !right->bounding_box(time0, time1, box_right))
-		printf( "no bouding box in bvh_node constructer\n");
-	//如何用异常来捕获这个输出，或者用messagebox来进行输出
+	if (!left->bounding_box(box_left) || !right->bounding_box(box_right))
+		std::cerr << "No bounding box in bvh_node constructor.\n";
 	
 
 	box = surrounding_box(box_left, box_right);

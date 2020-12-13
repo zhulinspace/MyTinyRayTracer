@@ -5,59 +5,50 @@ class Sphere :public Hitable
 {
 public:
 	Sphere(){}
-	Sphere(glm::vec3 cen, float r, material *mat)
-		:center(cen),radius(r),m(mat)
+	Sphere(vec3 cen, float r, shared_ptr<material> mat)
+		:center(cen),radius(r), mat_ptr(mat)
 	{}
-	~Sphere()
-	{
-		delete m;
-	}
-	virtual bool hit(const Ray& r, float t_min, float t_max, hit_record& rec)const;
-	virtual bool bounding_box(float t0, float t1, aabb& box)const;
-	glm::vec3 GetCenter()const { return center; }
+	
+	virtual bool hit(const Ray& r, double t_min, double t_max, hit_record& rec)const;
+	//virtual bool bounding_box(float t0, float t1, aabb& box)const;
+	virtual bool bounding_box(aabb& box)const;
+	vec3 GetCenter()const { return center; }
 	float GetRadius()const { return radius; }
 private:
-	glm::vec3 center;
+	vec3 center;
 	float radius;
-	material* m;
+	shared_ptr<material> mat_ptr;
 };
 
-bool Sphere::hit(const Ray& r, float t_min, float t_max, hit_record& rec)const
+bool Sphere::hit(const Ray& r, double t_min, double t_max, hit_record& rec)const
 {
-	glm::vec3 oc = r.origin() - center;
-	float a = glm::dot(r.direction(), r.direction());
-	float b = 2.0 * glm::dot(oc, r.direction());
-	float c = glm::dot(oc, oc) - radius * radius;
-	float discriminant = b * b - 4 * a * c;
-	if (discriminant > 0)
+	vec3 oc = r.origin() - center;
+	auto a = r.direction().length_squared();
+	auto half_b =  dot(oc, r.direction());
+	auto c = oc.length_squared() - radius * radius;
+	auto discriminant = half_b * half_b -   a * c;
+
+	if (discriminant < 0)return false;
+
+	auto sqrtd = sqrt(discriminant);
+	auto root = (-half_b - sqrtd) / a;
+	if (root < t_min || t_max < root)
 	{
-		float temp = (-b - sqrt(discriminant)) / (2.0 * a);
-		if (temp<t_max && temp>t_min)
-		{
-			rec.t = temp;
-			rec.p = r.point_at_parameter(temp);
-			//p is hit point!
-			rec.normal = (rec.p - center) / radius;
-			rec.mat_ptr = m;
-			return true;
-
-		}
-		temp = (-b + sqrt(discriminant)) / (2.0 * a);
-		if (temp<t_max && temp>t_min)
-		{
-			rec.t = temp;
-			rec.p = r.point_at_parameter(temp);
-			rec.normal = (rec.p - center) / radius;
-			rec.mat_ptr = m;
-			return true;
-
-		}
+		root = (-half_b + sqrtd) / a;
+		if (root<t_min || t_max<root)
+			return false;
 	}
-	return false;
+	rec.t = root;
+	rec.p = r.point_at_parameter(rec.t);
+	vec3 outward_normal = (rec.p - center) / radius;
+	rec.set_face_normal(r, outward_normal);
+	
+	rec.mat_ptr = mat_ptr;
+	return true;
 }
 
-inline bool Sphere::bounding_box(float t0, float t1, aabb& box) const
+inline bool Sphere::bounding_box(aabb& box) const
 {
-	box = aabb(center - glm::vec3(radius, radius, radius), center + glm::vec3(radius, radius, radius));
+	box = aabb(center - vec3(radius, radius, radius), center + vec3(radius, radius, radius));
 	return true;
 }

@@ -1,19 +1,17 @@
 #pragma once
 #include<Windows.h>
 #include<iostream>
-#include<chrono>
-#include<random>
-#include"vendor\glm\glm.hpp"
-#include"Ray.h"
+#include<fstream>
+#include"utils\utility.h"
+
 #include"HitableList.h"
-#include"Hitable.h"
+#include"bvh.h"
 #include"Sphere.h"
 #include"Camera.h"
 #include"Material.h"
-#include<limits>
-#include"bvh.h"
-#include<fstream>
-float MAXFLOAT = std::numeric_limits<float>::max();
+
+//#include"bvh.h"
+
 
 namespace SoftRender
 {
@@ -81,114 +79,91 @@ void SoftRender::ClearBuffer()
 
 
 
-glm::vec3 color(const Ray& r,Hitable *world,int depth)
+vec3 color(const Ray& r,Hitable &world,int depth)
 {
 	hit_record rec;
 	
-	if (world->hit(r,0.001,MAXFLOAT,rec))
+	if (depth <= 0)
+		return vec3(0, 0, 0);
+	if (world.hit(r,0.001, infinity,rec))
 	{
 		Ray scattered;
-		glm::vec3 attenuation;
-		if (depth <5 && rec.mat_ptr->scatter(r, rec, attenuation, scattered))
+		vec3 attenuation;
+		if (rec.mat_ptr->scatter(r, rec, attenuation, scattered))
 		{
-			return attenuation * color(scattered, world, depth + 1);
+			return attenuation * color(scattered, world, depth -1);
 		}
-		else
-		{
-			return glm::vec3(0, 0, 0);
-		}
-	}
-	else
-	{
-		glm::vec3 unit_direction = glm::normalize(r.direction());
-		float t = 0.5 * (unit_direction.y + 1.0);
-		return  glm::vec3(1.0, 1.0, 1.0) * (1 - t) + t * glm::vec3(0.5, 0.7, 1.0);
-	}
+		return vec3(0, 0, 0);
+	} 
+	
+	vec3 unit_direction = unit_vector(r.direction());
+	float t = 0.5 * (unit_direction.y() + 1.0);
+	return  vec3(1.0, 1.0, 1.0) * (1 - t) + t * vec3(0.5, 0.7, 1.0);
+	
 	
 
 }
-Hitable* random_scene()
+
+HitableList random_scene()
 {
-	int n =2;
-	Hitable** list = new Hitable * [n + 1];
-	list[0] = new Sphere(glm::vec3(0, -1000, 0), 1000, new lambertian(glm::vec3(0.5, 0.5, 0.5)));
-	int i = 1;
-	//for (int a = -11; a < 11; a++)
-	//{
-	//	for (int b = -11; b < 11; b++)
-	//	{
-	//		if (i == n - 1)break;
-	//		float choose_mat = dist(mt);
-	//		glm::vec3 center(a + 0.9 * dist(mt), 0.2, b + 0.9 * dist(mt));
-	//		if ((center - glm::vec3(4, 0.2, 0)).length() > 0.9)
-	//		{
-	//			if (choose_mat < 0.8)//diffuse
-	//			{
-	//				list[i++] = new Sphere(center, 0.2,
-	//					new lambertian(glm::vec3(dist(mt)* dist(mt), dist(mt) * dist(mt), dist(mt) * dist(mt))));
-	//			}
-	//			else if (choose_mat < 0.95)//metal
-	//			{
-	//				list[i++] = new Sphere(center, 0.2, 
-	//					new metal(glm::vec3(0.5*(1+dist(mt)), 0.5 * (1 + dist(mt)), 0.5 * (1 + dist(mt))), 0.5*dist(mt)));
-	//			}
-	//			else//glass
-	//			{
-	//				list[i++]= new Sphere(center, 0.2, 
-	//					new dielectric(1.5));
-	//			}
-	//		}
-	//	}
-	//}
+	HitableList list;
 
-	list[i++] = new Sphere(glm::vec3(0, 1, 0), 1.0, new dielectric(1.5));
-	list[i++] = new Sphere(glm::vec3(-4, 1, 0), 1.0, new lambertian(glm::vec3(0.4, 0.2, 0.1)));
-	list[i++] = new Sphere(glm::vec3(4, 1, 0), 1.0, new metal(glm::vec3(0.7, 0.6, 0.5),0.0));
+	auto material_ground = make_shared<lambertian>(vec3(0.8, 0.8, 0.0));
+	auto material_center = make_shared<lambertian>(vec3(0.1, 0.2, 0.5));
+	auto material_left = make_shared<dielectric>(1.5);
+	auto material_right = make_shared<metal>(vec3(0.8, 0.6, 0.2), 0.0);
 
-	return new HitableList(list, i);
+	list.add(make_shared<Sphere>(vec3(0.0, -100.5, -1.0), 100.0, material_ground));
+	list.add(make_shared<Sphere>(vec3(0.0, 0.0, -1.0), 0.5, material_center));
+	list.add(make_shared<Sphere>(vec3(-1.0, 0.0, -1.0), 0.5, material_left));
+	list.add(make_shared<Sphere>(vec3(-1.0, 0.0, -1.0), -0.45, material_left));
+	list.add(make_shared<Sphere>(vec3(1.0, 0.0, -1.0), 0.5, material_right));
+
+	//return HitableList(make_shared<bvh_node>(list));
+	return list;
 }
+
 
 void SoftRender::DoOneFrame(const float t)
 {
+	std::ofstream outputfile;
+	outputfile.open("res.txt", std::ios::app);
+	MyTimer timer;
 
-	auto start = std::chrono::system_clock::now();
+	int ns =100;
+	int max_depth=50;
+	
+	
+	HitableList world = random_scene();
+	
+
+	
+	
+	double time =timer.Mark() * std::chrono::microseconds::period::num / std::chrono::microseconds::period::den;
+	outputfile << "construct time:"<<time << " seconds" << "\n";
+	
 
 
-	int ns =20;
-	Hitable* list[5];
-	list[0] = new Sphere(glm::vec3(0, -100.5, -1), 100, new lambertian(glm::vec3(0.5, 0.5, 0.5)));
-	list[1] = new Sphere(glm::vec3(0, 0, -1), 0.5, new lambertian(glm::vec3(0.4, 0.2, 0.1)));
-	list[2] = new Sphere(glm::vec3(1,0, -1), 0.5, new metal(glm::vec3(0.7, 0.6, 0.5), 0.0));
-	list[3] = new Sphere(glm::vec3(-1, 0, -1), 0.5, new dielectric(1.5));
-	//list[4] = new Sphere(glm::vec3(-1, 0, -1), -0.45, new dielectric(1.5));
-	Hitable* world = new HitableList(list,4);
-	//Hitable* world = new bvh_node(list, 4,0.0,0.0);
+	double aspect = double(g_width*1.0f / g_height);
 
-	//Hitable* world = random_scene();
-
-	glm::vec3 lookfrom, lookat, vup;
-	float aspect = float(g_width*1.0f / g_height);
-	float vfov = 90;
-	lookfrom = glm::vec3(0,0,0);
-	lookat = glm::vec3(0,0,-1);
-	vup = glm::vec3(0, 1, 0);
-	Camera cam(lookfrom, lookat, vup, vfov, aspect);
+	Camera cam(vec3(-2, 2, 1), vec3(0, 0, -1), vec3(0, 1, 0), 90, aspect);
 
 	//for(int row= g_height-1;row>=0;row--)
 	for(int row=0;row<g_height;row++)
 	{
 		for (int col = 0; col < g_width; col++)
 		{
-			glm::vec3 cr(0.0, 0.0, 0.0);
+			vec3 cr(0.0, 0.0, 0.0);
 			for (int s = 0; s < ns; s++)
 			{
-				float u = float(col+dist(mt)) / float(g_width);
-				float v = float(row+ dist(mt)) / float(g_height);
+				auto u = double(col+random_double()) / double(g_width);
+				auto v = double(row+ random_double()) / double(g_height);
 				Ray r = cam.GetRay(u, v);
-				cr += color(r, world,0);
+				cr += color(r, world, max_depth);
 			}
-			cr /= float(ns);
-			cr = glm::vec3(sqrtf(cr[0]), sqrtf(cr[1]), sqrtf(cr[2]));
+			auto scale = 1.0 / double(ns);
+			cr *= scale;
+			cr = vec3(sqrt(cr[0]), sqrt(cr[1]), sqrt(cr[2]));
 			int ir = int(255.99 * cr[0]);
 			int ig = int(255.99 * cr[1]);
 			int ib = int(255.99 * cr[2]);
@@ -197,13 +172,9 @@ void SoftRender::DoOneFrame(const float t)
 			g_FrameBuffer[idx] = newcolor;
 		}
 	}
-	auto end = std::chrono::system_clock::now();
-	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-	double time = double(duration.count()) * std::chrono::microseconds::period::num / std::chrono::microseconds::period::den;
-	
-	std::ofstream outputfile;
-	outputfile.open("rex.txt",std:: ios::app);
-	outputfile << time << "seconds" << "\n";
+
+	time = timer.Mark() * std::chrono::microseconds::period::num / std::chrono::microseconds::period::den;
+	outputfile <<"rendering time:" <<time << " seconds" << "\n";
 	outputfile.close();
 }
 

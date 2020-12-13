@@ -1,16 +1,18 @@
 #pragma once
-#include"vendor\glm\glm.hpp"
+#include"utils\vec3.h"
+
+
 class Ray
 {
 public:
 	Ray(){}
-	Ray(const glm::vec3&a,const glm::vec3& b)
+	Ray(const vec3&a,const vec3& b)
 	:ori(a),dir(b)
 	{}
-	inline glm::vec3 origin()const { return ori; }
-	inline glm::vec3 direction()const { return dir; }
-	inline glm::vec3 point_at_parameter(float t)const { return ori + t * dir; }
+	inline vec3 origin()const { return ori; }
+	inline vec3 direction()const { return dir; }
+	inline vec3 point_at_parameter(double t)const { return ori + dir*t; }
 private:
-	glm::vec3 ori;
-	glm::vec3 dir;
+	vec3 ori;
+	vec3 dir;
 };

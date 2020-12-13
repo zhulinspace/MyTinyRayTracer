@@ -1,74 +1,75 @@
 #pragma once
 #include"Ray.h"
 
-#include<random>
-std::random_device rd;
-std::mt19937 mt(rd());
-std::uniform_real_distribution<float>dist(0.0, 1.0);
 
-glm::vec3 random_in_unit_sphere()
+
+inline vec3 random_in_unit_sphere()
 {
-	glm::vec3 p;
-	do {
-		p = 2.0f * glm::vec3(dist(mt), dist(mt), dist(mt)) - glm::vec3(1, 1, 1);
-
-	} while (p.x * p.x + p.y * p.y + p.z * p.z >= 1.0);
-	return p;
+	
+	while (true)
+	{
+		auto p = vec3::random(-1, 1);
+		if (p.length_squared() >= 1)continue;
+		return p;
+	}
 }
+inline vec3 random_unit_vector()
+{
+	return unit_vector(random_in_unit_sphere());
+}
+
 class material
 {
 public:
-	virtual bool scatter(const Ray& r_in, const hit_record& rec, glm::vec3& attenuation, Ray& scattered)const = 0;
+	virtual bool scatter(const Ray& r_in, const hit_record& rec, vec3& attenuation, Ray& scattered)const = 0;
 };
 
 class lambertian :public material
 {
 public:
-	lambertian(const glm::vec3&a):albedo(a){}
-	virtual bool scatter(const Ray& r_in, const hit_record& rec, glm::vec3& attenuation, Ray& scattered)const
+	lambertian(const vec3&a):albedo(a){}
+	virtual bool scatter(const Ray& r_in, const hit_record& rec, vec3& attenuation, Ray& scattered)const
 	{
-		glm::vec3 target = rec.p + rec.normal + random_in_unit_sphere();
-		scattered = Ray(rec.p, target - rec.p);
+		auto scatter_direction = rec.normal + random_unit_vector();
+
+		if (scatter_direction.near_zero())
+			scatter_direction = rec.normal;
+
+		scattered = Ray(rec.p, scatter_direction);
 		attenuation = albedo;
 		return true;
 	}
 
 private:
-	glm::vec3 albedo;
+	vec3 albedo;
 };
 
-glm::vec3 reflect(const glm::vec3& v, const glm::vec3& n)
+vec3 reflect(const vec3& v, const vec3& n)
 {
-	return v - 2.0f * glm::dot(v, n) * n;
+	return v - 2.0f * dot(v, n) * n;
 }
 class metal :public material
 {
 public:
-	metal(const glm::vec3& a, float f) :albedo(a) { if (f < 1)fuzz = f; else fuzz = 1; }
-	virtual bool scatter(const Ray& r_in, const hit_record& rec, glm::vec3& attenuation, Ray& scattered)const
+	metal(const vec3& a, float f) :albedo(a) ,fuzz(f<1?f:1){ }
+	virtual bool scatter(const Ray& r_in, const hit_record& rec, vec3& attenuation, Ray& scattered)const
 	{
-		glm::vec3 reflected = reflect(glm::normalize(r_in.direction()), rec.normal);
+		vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
 		scattered = Ray(rec.p, reflected+fuzz*random_in_unit_sphere());
 		attenuation = albedo;
-		return (glm::dot(scattered.direction(), rec.normal) > 0);
+		return (dot(scattered.direction(), rec.normal) > 0);
 	}
 private:
-	glm::vec3 albedo;
-	float fuzz;
+	vec3 albedo;
+	double fuzz;
 };
 
-bool refract(const glm::vec3& v, const glm::vec3& n, float ni_over_nt, glm::vec3& refracted)
+vec3 refract(const vec3& v, const vec3& n, double ni_over_nt)
 {
-	glm::vec3 uv = glm::normalize(v);
-	float dt = glm::dot(uv, n);
-	float discriminant = 1.0f - ni_over_nt * ni_over_nt * (1 - dt * dt);
-	if (discriminant > 0)
-	{
-		refracted = ni_over_nt * (uv - n * dt) - n * sqrt(discriminant);
-		return true;
-	}
-	
-	return false;
+	auto cos_theta = fmin(dot(-v, n), 1.0);
+	vec3 r_out_perp = ni_over_nt * (v + cos_theta * n);
+	vec3 r_out_parallel = -sqrt(fabs(1.0 - r_out_perp.length_squared())) * n;
+	return r_out_perp + r_out_parallel;
 }
 float schlick(float cosine, float ref_idx)
 {
@@ -80,52 +81,33 @@ float schlick(float cosine, float ref_idx)
 class dielectric :public material
 {
 public:
-	dielectric(float ri) :ref_idx(ri){}
-	virtual bool scatter(const Ray& r_in, const hit_record& rec, glm::vec3& attenuation, Ray& scattered)const
+	dielectric(double ri) :ref_idx(ri){}
+	virtual bool scatter(const Ray& r_in, const hit_record& rec, vec3& attenuation, Ray& scattered)const
 	{
-		glm::vec3 outward_normal;
-		glm::vec3 reflectd = reflect(r_in.direction(), rec.normal);
-		float ni_over_nt;
-		attenuation = glm::vec3(1.0, 1.0,1.0);
-		glm::vec3 refracted;
-		float reflect_prob;
-		float cosine;
+		attenuation = vec3(1.0, 1.0, 1.0);
+		double refraction_ratio = rec.front_face ? (1.0 / ref_idx) : ref_idx;
 
-		if (glm::dot(r_in.direction(), rec.normal) > 0)
-		{
-			outward_normal = -rec.normal;
-			ni_over_nt = ref_idx;
-			cosine = ref_idx * glm::dot(r_in.direction(), rec.normal) / r_in.direction().length();
+		vec3 unit_direction = unit_vector(r_in.direction());
+		double cos_theta = fmin(dot(-unit_direction, rec.normal), 1.0);
+		double sin_theta = sqrt(1.0 - cos_theta * cos_theta);
 
-		}
-		else {
-			outward_normal = rec.normal;
-			ni_over_nt = 1.0f / ref_idx;
-			cosine = -glm::dot(r_in.direction(), rec.normal) / r_in.direction().length();
-
-		}
-
-		if (refract(r_in.direction(), outward_normal, ni_over_nt, refracted))
-		{
-			reflect_prob = schlick(cosine, ref_idx);
-			
-		}
+		bool cannot_refract = refraction_ratio * sin_theta > 1.0;
+		vec3 direction;
+		if (cannot_refract || reflectance(cos_theta, refraction_ratio) > random_double())
+			direction = reflect(unit_direction, rec.normal);
 		else
-		{
-			reflect_prob = 1.0f;
-		}
+			direction = refract(unit_direction, rec.normal, refraction_ratio);
 
-		if (dist(mt) < reflect_prob)
-		{
-			scattered = Ray(rec.p, reflectd);
-		}
-		else
-		{
-			scattered = Ray(rec.p, refracted);
-		}
-		
+		scattered = Ray(rec.p, direction);
 		return true;
 	}
-	float ref_idx;
+private:
+	static double reflectance(double cosine, double ref_idx) {
+		// Use Schlick's approximation for reflectance.
+		auto r0 = (1 - ref_idx) / (1 + ref_idx);
+		r0 = r0 * r0;
+		return r0 + (1 - r0) * pow((1 - cosine), 5);
+	}
+	double ref_idx;
 };
 

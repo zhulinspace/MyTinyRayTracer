@@ -1,34 +1,40 @@
 #pragma once
-#include"Ray.h"
-#define M_PI 3.14159265358979323846
+#include"utils\utility.h"
+
 class Camera
 {
 public:
-	Camera(glm::vec3 lookfrom,glm::vec3 lookat,glm::vec3 vup,float vfov,float aspect)
+	Camera(vec3 lookfrom,vec3 lookat,vec3 vup,double vfov,double aspect)
 	{	
-		glm::vec3 u,v, w;
-		float theta = vfov * M_PI / 180;
-		float half_height = tan(theta / 2);//这个half_height计算对了吗？
-		float half_width = aspect * half_height;
+		vec3 u,v, w;
+		auto theta = degrees_to_radians(vfov);
+		auto half_height = tan(theta / 2);
+		auto viewport_height = 2.0 * half_height;
+		auto viewport_width = aspect * viewport_height;
+
+		
+		w = unit_vector(lookfrom - lookat);
+		u = unit_vector(cross(vup, w));
+		v = cross(w, u);
+
 		origin = lookfrom;
-		w = glm::normalize(lookfrom - lookat);
-		u = glm::normalize(glm::cross(vup, w));
-		v = glm::cross(w, u);
-		lower_left_corner = origin - half_width * u - half_height * v - w;
-		horizontal = 2*half_width * u;
-		vertical = 2*half_height * v;
+		horizontal = viewport_width * u;
+		vertical = viewport_height * v;
+		
+		lower_left_corner = origin - horizontal / 2 - vertical / 2 - w;
+	
 		
 		//这里的成像平面定义如果定义为z=-1
 		//
 		
 	}
-	Ray GetRay(float u, float v)
+	Ray GetRay(double u, double v)
 	{
 		return Ray(origin, lower_left_corner+ u*horizontal+v*vertical-origin);
 	}
 
-	glm::vec3 lower_left_corner;
-	glm::vec3 horizontal;
-	glm::vec3 vertical;
-	glm::vec3 origin;
+	vec3 lower_left_corner;
+	vec3 horizontal;
+	vec3 vertical;
+	vec3 origin;
 };
