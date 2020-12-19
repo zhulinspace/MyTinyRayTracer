@@ -5,7 +5,7 @@
 class bvh_node :public Hitable
 {
 public:
-	bvh_node() {}
+	bvh_node();
 	
 	bvh_node(const HitableList& list)
 		:bvh_node(list.objects,0, list.objects.size())
@@ -30,40 +30,12 @@ bool bvh_node::bounding_box(aabb& output_box)const
 
 bool bvh_node::hit(const Ray& r, double t_min, double t_max, hit_record& rec)const
 {
-	/*if (box.hit(r, t_min, t_max))
-	{
-		hit_record left_rec, right_rec;
-		bool hit_left = left->hit(r, t_min, t_max, left_rec);
-		bool hit_right = right->hit(r, t_min, t_max, right_rec);
-		if (hit_left && hit_right)
-		{
-			if (left_rec.t < right_rec.t)
-				rec = left_rec;
-			else
-				rec = right_rec;
-			return true;
-		}
-		else if (hit_left)
-		{
-			rec = left_rec;
-			return true;
-		}
-		else if (hit_right)
-		{
-			rec = right_rec;
-			return true;
-		}
-		else
-			return false;
-	}
-	else
-		return false;*/
-
+	
 	if (!box.hit(r, t_min, t_max))
 		return false;
 
 	bool hit_left = left->hit(r, t_min, t_max, rec);
-	bool hit_right = right->hit(r, t_min, t_max, rec);
+	bool hit_right = right->hit(r, t_min, hit_left ? rec.t : t_max, rec);
 
 	return hit_left || hit_right;
 
@@ -93,22 +65,16 @@ bool box_z_compare(const shared_ptr<Hitable> a, const shared_ptr<Hitable> b) {
 
 bvh_node::bvh_node(const std::vector<shared_ptr<Hitable>>& src_objects, size_t start, size_t end)
 {
-	//1.选择最长的那个轴,如何选择最长的那个轴
-
-
+	//选择最长的那个轴,如何选择最长的那个轴
 	//如果是第一次则应该根据场景看的宽度和高度进行判定，
-
 	//按最长的那个轴进行排序，排序后分成两个子节点进行构建
-
 	//我得知道当前节点的bbox
 
 	auto objects = src_objects;//create a modifiable array of the src scene objects
 
 	int axis = random_int(0,2);
 
-	auto comparator = (axis == 0) ? box_x_compare
-		: (axis == 1) ? box_y_compare
-		: box_z_compare;
+	auto comparator = (axis == 0) ? box_x_compare: (axis == 1) ? box_y_compare : box_z_compare;
 
 	size_t n = end - start;
 

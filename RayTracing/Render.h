@@ -1,7 +1,6 @@
 #pragma once
 #include<Windows.h>
 #include<iostream>
-#include<fstream>
 #include"utils\utility.h"
 
 #include"HitableList.h"
@@ -106,7 +105,7 @@ vec3 color(const Ray& r,Hitable &world,int depth)
 
 HitableList random_scene()
 {
-	HitableList list;
+	/*HitableList list;
 
 	auto material_ground = make_shared<lambertian>(vec3(0.8, 0.8, 0.0));
 	auto material_center = make_shared<lambertian>(vec3(0.1, 0.2, 0.5));
@@ -119,45 +118,113 @@ HitableList random_scene()
 	list.add(make_shared<Sphere>(vec3(-1.0, 0.0, -1.0), -0.45, material_left));
 	list.add(make_shared<Sphere>(vec3(1.0, 0.0, -1.0), 0.5, material_right));
 
-	//return HitableList(make_shared<bvh_node>(list));
-	return list;
-}
+	return HitableList(make_shared<bvh_node>(list));*/
+	//return list;
 
+
+
+	 HitableList world;
+
+	//auto checker = make_shared<checker_texture>(color(0.2, 0.3, 0.1), color(0.9, 0.9, 0.9));
+
+	world.add(make_shared<Sphere>(vec3(0,-1000,0), 1000, make_shared<lambertian>(vec3(0.9, 0.9, 0.9))));
+
+	for (int a = -11; a < 11; a++) {
+	    for (int b = -11; b < 11; b++) {
+	        auto choose_mat = random_double();
+	        vec3 center(a + 0.9*random_double(), 0.2, b + 0.9*random_double());
+
+	        if ((center - vec3(4, 0.2, 0)).length() > 0.9) {
+	            shared_ptr<material> sphere_material;
+
+	            if (choose_mat < 0.8) {
+	                // diffuse
+	                auto albedo = vec3::random() * vec3::random();
+	                sphere_material = make_shared<lambertian>(albedo);
+	               // auto center2 = center + vec3(0, random_double(0,.5), 0);
+	               /* world.add(make_shared<Sphere>(
+	                    center, center2, 0.0, 1.0, 0.2, sphere_material));*/
+					world.add(make_shared<Sphere>(
+						center,0.2, sphere_material));
+	            } else if (choose_mat < 0.95) {
+	                // metal
+	                auto albedo = vec3::random(0.5, 1);
+	                auto fuzz = random_double(0, 0.5);
+	                sphere_material = make_shared<metal>(albedo, fuzz);
+	                world.add(make_shared<Sphere>(center, 0.2, sphere_material));
+	            } else {
+	                // glass
+	                sphere_material = make_shared<dielectric>(1.5);
+	                world.add(make_shared<Sphere>(center, 0.2, sphere_material));
+	            }
+	        }
+	    }
+	}
+
+	auto material1 = make_shared<dielectric>(1.5);
+	world.add(make_shared<Sphere>(vec3(0, 1, 0), 1.0, material1));
+
+	auto material2 = make_shared<lambertian>(vec3(0.4, 0.2, 0.1));
+	world.add(make_shared<Sphere>(vec3(-4, 1, 0), 1.0, material2));
+
+	auto material3 = make_shared<metal>(vec3(0.7, 0.6, 0.5), 0.0);
+	world.add(make_shared<Sphere>(vec3(4, 1, 0), 1.0, material3));
+
+	return HitableList(make_shared<bvh_node>(world));
+}
+void drawimage(int w, int h, int ns, int depth, Camera& ca)
+{// hÎª200£¬400£¬600£¬800
+	for (int row = h - 1; row >= h-200; row--)
+	{
+		for (int col = 0; col < w; col++)
+		{
+			vec3 cr(0.0, 0.0, 0.0);
+			for (int s = 0; s < ns; s++)
+			{
+				auto u = double(col + random_double()) / double(w);//u :horizontal
+				auto v = double(row + random_double()) / double(g_height);//v :vertical
+				Ray r = cam.GetRay(u, v);
+				cr += color(r, world, max_depth);
+			}
+			auto scale = 1.0 / double(ns);
+			cr *= scale;
+			cr = vec3(sqrt(cr[0]), sqrt(cr[1]), sqrt(cr[2]));
+		}
+	}
+}
 
 void SoftRender::DoOneFrame(const float t)
 {
-	std::ofstream outputfile;
-	outputfile.open("res.txt", std::ios::app);
+
 	MyTimer timer;
 
 	int ns =100;
 	int max_depth=50;
 	
-	
+
 	HitableList world = random_scene();
 	
-
-	
-	
 	double time =timer.Mark() * std::chrono::microseconds::period::num / std::chrono::microseconds::period::den;
-	outputfile << "construct time:"<<time << " seconds" << "\n";
+	std::cout << "construct time:"<<time << " seconds" << "\n";
 	
 
 
 	double aspect = double(g_width*1.0f / g_height);
 
-	Camera cam(vec3(-2, 2, 1), vec3(0, 0, -1), vec3(0, 1, 0), 90, aspect);
+	Camera cam(vec3(13, 2, 3), vec3(0, 0,0), vec3(0, 1, 0),20, aspect);
 
-	//for(int row= g_height-1;row>=0;row--)
-	for(int row=0;row<g_height;row++)
+	for(int row= g_height-1;row>=0;row--)
+
+	//for(int row=0;row<g_height;row++)
 	{
+		std::cout << "\rScanlines remaining: " << row<< ' ' << std::flush;
 		for (int col = 0; col < g_width; col++)
 		{
 			vec3 cr(0.0, 0.0, 0.0);
 			for (int s = 0; s < ns; s++)
 			{
-				auto u = double(col+random_double()) / double(g_width);
-				auto v = double(row+ random_double()) / double(g_height);
+				auto u = double(col+random_double()) / double(g_width);//u :horizontal
+				auto v = double(row+ random_double()) / double(g_height);//v :vertical
 				Ray r = cam.GetRay(u, v);
 				cr += color(r, world, max_depth);
 			}
@@ -174,8 +241,8 @@ void SoftRender::DoOneFrame(const float t)
 	}
 
 	time = timer.Mark() * std::chrono::microseconds::period::num / std::chrono::microseconds::period::den;
-	outputfile <<"rendering time:" <<time << " seconds" << "\n";
-	outputfile.close();
+	std::cout <<"rendering time:" <<time << " seconds" << "\n";
+	std::cerr << "\nDone.\n";
 }
 
 void SoftRender::ShutDown()
