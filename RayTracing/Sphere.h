@@ -14,6 +14,16 @@ public:
 	virtual bool bounding_box(aabb& box)const;
 	vec3 GetCenter()const { return center; }
 	float GetRadius()const { return radius; }
+
+	static void get_sphere_uv(const vec3& p, double u, double v)
+	{
+		auto theta = acos(-p.y());
+		auto phi = atan2(-p.z(), p.x()) + pi;
+
+		u = phi / (2 * pi);
+		v = theta / pi;
+	}
+
 private:
 	vec3 center;
 	float radius;
@@ -42,7 +52,7 @@ bool Sphere::hit(const Ray& r, double t_min, double t_max, hit_record& rec)const
 	rec.p = r.point_at_parameter(rec.t);
 	vec3 outward_normal = (rec.p - center) / radius;
 	rec.set_face_normal(r, outward_normal);
-	
+	get_sphere_uv(outward_normal, rec.u, rec.v);
 	rec.mat_ptr = mat_ptr;
 	return true;
 }

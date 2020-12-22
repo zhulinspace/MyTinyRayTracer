@@ -169,6 +169,7 @@
     <ClInclude Include="Ray.h" />
     <ClInclude Include="Render.h" />
     <ClInclude Include="Sphere.h" />
+    <ClInclude Include="texture.h" />
     <ClInclude Include="utils\utility.h" />
     <ClInclude Include="utils\vec3.h" />
     <ClInclude Include="vendor\stb_image\stb_image.h" />

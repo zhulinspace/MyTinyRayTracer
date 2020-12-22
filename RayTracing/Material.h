@@ -1,6 +1,6 @@
 #pragma once
 #include"Ray.h"
-
+#include"texture.h"
 
 
 inline vec3 random_in_unit_sphere()
@@ -27,7 +27,9 @@ public:
 class lambertian :public material
 {
 public:
-	lambertian(const vec3&a):albedo(a){}
+
+	lambertian(const vec3& a) :albedo(make_shared<constant_texture>(a)) {}
+	lambertian(shared_ptr<texture>a) :albedo(a) {}
 	virtual bool scatter(const Ray& r_in, const hit_record& rec, vec3& attenuation, Ray& scattered)const
 	{
 		auto scatter_direction = rec.normal + random_unit_vector();
@@ -36,12 +38,12 @@ public:
 			scatter_direction = rec.normal;
 
 		scattered = Ray(rec.p, scatter_direction);
-		attenuation = albedo;
+		attenuation = albedo->value(rec.u,rec.v, rec.p);
 		return true;
 	}
 
-private:
-	vec3 albedo;
+
+	shared_ptr<texture>albedo;
 };
 
 vec3 reflect(const vec3& v, const vec3& n)
